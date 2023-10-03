@@ -141,7 +141,7 @@ class exit(object):
         self.hitbox = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def hit(self):
-        # Code showing waht happens when the player hits the exit
+        # Code showing what happens when the player hits the exit
         global player,z, Start_x, Start_y
         z = z+1
         self.visible = False
@@ -259,13 +259,12 @@ class Player(object):
         pass
 
     def update_hitbox(self):
-        #
+        #refreshes the hitbox to the deisgnated position
         self.hitbox = pygame.Rect(self.x, self.y, 34, 65)
-
-
 
 class Platform(object):
     def __init__(self, x, y, width, height):
+        # platform variables
         self.x = x
         self.y = y
         self.width = width
@@ -273,10 +272,12 @@ class Platform(object):
         self.rect = pygame.Rect(x, y, width, height)
 
     def draw(self, win):
+        # draws the platforms as a rectangle with a certain colour
         pygame.draw.rect(win, (0, 255, 0), self.rect)
 
 class projectile(object):
     def __init__(self, x, y, radius, color, facing):
+        #Projectile variables
         self.x = x
         self.y = y
         self.radius = radius
@@ -284,7 +285,6 @@ class projectile(object):
         self.facing = facing
         self.vel = 12*facing
         self.hitbox = pygame.Rect(self.x - self.radius, self.y - self.radius, self.radius*2,self.radius*2)
-        #Projectile variables
 
     def draw(self,win):
         pygame.draw.circle(win,self.color,(self.x, self.y),self.radius)
@@ -292,6 +292,7 @@ class projectile(object):
         #Draws an circle in front of the player
 
     def hit(self, enemies):
+        #Checks all the enemies to see if any of them have been hit, and increases the score by 100 each time
         for Enemy in enemies:
             if self.hitbox.colliderect(Enemy.hitbox):
                 return True
@@ -318,6 +319,7 @@ class Enemy(object):
 
     def draw(self,win,bullets=None):
         if self.visible:
+            #
             if bullets is not None and self.hit(bullets):
                 self.visible = False
                 bullets.remove(bullet)
