@@ -1,3 +1,6 @@
+# Code for my pygame Manic Miner remake/remodel
+
+# Loads any extenernal libraries needed fro the code to function
 import pygame
 import sys
 import sqlite3
@@ -319,7 +322,7 @@ class Enemy(object):
 
     def draw(self,win,bullets=None):
         if self.visible:
-            #
+            #checks if bullets are on the screen and if the enemy hits them, then removes the enemy if they have been hit
             if bullets is not None and self.hit(bullets):
                 self.visible = False
                 bullets.remove(bullet)
@@ -360,6 +363,7 @@ class Enemy(object):
                 self.walkCount=0
                 #The calculations for the automatic walking of the Enemy. Moves right a certain amount and then back a certain amount.
     def hit(self):
+        #Loads player variables and resets the players position if they hit the player.
         global player,z
         if z == 2 or z == 3 or z==7 or z==8 or z==9 or z==10 or z==11 or z==12 or z==14 or z==16 or z==17: 
             player_obj.x = Start_x
@@ -508,14 +512,17 @@ while run:
     clock.tick(30)
 
     for event in pygame.event.get():
+        #Allows the program to shut down when quit is pressed
         if event.type == pygame.QUIT:
             run = False
         elif event.type == pygame.KEYDOWN:
+            #Checks if the game has started and activates the timer if it has
             if event.key == pygame.K_RETURN and z==0 or z==1:
                 z = min(z + 1, len(bg) - 1)
                 if z==1:
                     start_time = pygame.time.get_ticks()
                 win.fill((0,0,0))
+            #Runs the program again if the user presses the button to do so at the end of the game (on leaderboard)
             if event.key == pygame.K_RETURN and z == 20 and not enter_pressed:
                 z = 1
                 input_active = False
@@ -575,6 +582,7 @@ while run:
                 enemy_check_4 = False
                 displayed_entries = [] 
                 number = 1
+            #Stores the values the player got in the game when it ends, and loads them into the database
             if input_active:
                 if event.key == pygame.K_RETURN:
                     if not enter_pressed:
@@ -589,19 +597,22 @@ while run:
                     input_text = input_text[:-1]
                 else:
                     input_text += event.unicode
+        # Makes input active true when the screen is 19
         if z==19 and not input_active:
             input_active = True
+        # Blits the screen so that the database is shown on top of the background
         if z==20 and not Check:
             win.blit(bg[z],(0,0))
             Check = True
         if z==20:
+            # Fetches all the data in the database that has been stored previously
             if not displayed_entries:
                 cursor.execute('SELECT player_name, score, play_time FROM scores ORDER BY play_time')
                 leaderboard_data = cursor.fetchall()
                 print("Fetched data from the database:", leaderboard_data) 
                 leaderboard_display_time = pygame.time.get_ticks()
 
-            # Display leaderboard entries
+            # Display's the leaderboard entries
             y = 160
             displayed_count = 0
             for entry in leaderboard_data:
@@ -627,7 +638,8 @@ while run:
 
     if enter_pressed and pygame.time.get_ticks() - enter_pressed_time >= auto_reset_duration:
         enter_pressed = False
-                
+
+    # Loads all the music for the game          
     if z==1:
         pygame.mixer.music.stop()
     if z==1:
@@ -640,13 +652,15 @@ while run:
         Music_Check = True
     if z==19:
         pygame.mixer.music.load(r'c:\Users\gfbro\OneDrive\Documents\ComputerScience\NEA\Finlays game music - title.mp3')
-        pygame.mixer.music.play(-1)     
+        pygame.mixer.music.play(-1)    
+
+    #Used to stop a glitch with the bullets where multiple would be shot accidently   
     if shootLoop > 0:
         shootLoop +=1
     if shootLoop>3:
         shootLoop =0
-        #Used to stop a glitch with the bullets where multiple would be shot accidently
 
+    #All the collision detections between the bullets and the enemies
     for bullet in bullets:
         for Enemy in enemies:  # List of enemies
             if bullet.hitbox.colliderect(Enemy.hitbox):
@@ -700,12 +714,14 @@ while run:
 
                 break  # Exit the loop once a hit is detected
 
+        # Removes the bullet when it hits the enemy
         if bullet.x < target.x + target.width and bullet.x > target.x:
             if bullet.y < target.y + target.height and bullet.y > target.y:
                 target.hit()
                 bullets.pop(bullets.index(bullet))
                 break
 
+        # checks if the bullet is on the screen and removes it if goes out of the boundaries
         if bullet.x < 1175 and bullet.x>45:
             bullet.x += bullet.vel
         else:
@@ -713,6 +729,7 @@ while run:
             continue
             #Removes bullets when they go off screen
 
+        # Removes the bullets and hits the targets when they interact together
         bullet.draw(win)
         for target in target_obj:
             if (bullet.x < target.x + target.width and bullet.x > target.x and bullet.y < target.y + target.height and bullet.y > target.y):
@@ -720,6 +737,7 @@ while run:
                     bullets.remove(bullet)
                     break
 
+    # checks the collision with the player when they touch the target
     for target in target_obj:
         if player_obj.hitbox[1] < target.hitbox[1] + target.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > target.hitbox[1]:
             if player_obj.hitbox[0] + player_obj.hitbox[2] > target.hitbox[0] and player_obj.hitbox[0] < target.hitbox[0] + target.hitbox[2]:
@@ -727,6 +745,10 @@ while run:
 
     keys = pygame.key.get_pressed()
 
+    #Controls the bullets, making sure they shoot the correct side and are the correct size and location
+    #(man.x + (man.width//5)), round(man.y + (man.height//5)) controls the location bullets are shot from
+    #4 controls the size of the bullets
+    #(255,0,0) controls the colour of the bullets
     if keys[pygame.K_SPACE] and shootLoop == 0:
         if player_obj.left:
             facing = -1
@@ -738,11 +760,8 @@ while run:
                 bullet_sound.play()
         
         shootLoop = 1
-    #Controls the bullets, making sure they shoot the correct side and are the correct size and location
-    #(man.x + (man.width//5)), round(man.y + (man.height//5)) controls the location bullets are shot from
-    #4 controls the size of the bullets
-    #(255,0,0) controls the colour of the bullets
 
+    # The animation for the movement of the character
     if (keys[pygame.K_LEFT] or keys[pygame.K_a])and player_obj.x > player_obj.vel+35:
         player_obj.x -= player_obj.vel
         player_obj.left = True
@@ -813,6 +832,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform5
     on_platform5 = False
     for platform in platform5:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -826,6 +846,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform6
     on_platform6 = False
     for platform in platform6:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -839,6 +860,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform7
     on_platform7 = False
     for platform in platform7:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -852,6 +874,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform8
     on_platform8 = False
     for platform in platform8:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -865,6 +888,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform9
     on_platform9 = False
     for platform in platform9:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -878,6 +902,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform10
     on_platform10 = False
     for platform in platform10:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -891,6 +916,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform11
     on_platform11 = False
     for platform in platform11:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -904,6 +930,7 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Check if the player is on platform12
     on_platform12 = False
     for platform in platform12:
         if player_obj.y + player_obj.height >= platform.y and player_obj.y <= platform.y + platform.height:
@@ -917,15 +944,18 @@ while run:
                 initial_jump_height = player_obj.y
                 break
 
+    # Checks if the play is in the air, and stops him from jumping if so
     if not (on_platform1 or on_platform2 or on_platform2 or on_platform4 or on_platform5 or on_platform6 or on_platform7 or on_platform8 or on_platform9 or on_platform10 or on_platform11 or on_platform12):
         current_platform = None
         can_jump = False
         has_jumped = False  # Reset the has_jumped flag
 
+    # Checks if the player is on the ground or a platform, allowing them to jump
     if not player_obj.isJump and (on_platform1 or on_platform2 or on_platform3 or on_platform4 or on_platform5 or on_platform6 or on_platform7 or on_platform8 or on_platform9 or on_platform10 or on_platform11 or on_platform12):
         can_jump = True
         has_jumped = False  # Reset the has_jumped flag
 
+    # Makes the calculations and changes the variables 
     if not has_jumped and (on_platform1 or on_platform2 or on_platform3 or on_platform4 or on_platform5 or on_platform6 or on_platform7 or on_platform8 or on_platform9 or on_platform10 or on_platform11 or on_platform12) and (keys[pygame.K_UP] or keys[pygame.K_w]) and can_jump:
         current_time = pygame.time.get_ticks()  # Get the current time in milliseconds
         if current_time - last_jump_time >= jump_delay:
@@ -935,6 +965,7 @@ while run:
             has_jumped = True  # Set the has_jumped flag to True
             last_jump_time = current_time  # Update the last jump time
 
+    # The calculations for the curved jump the player has, making them go up and then down
     if player_obj.isJump:
         if player_obj.jumpCount >= -9.25:
             neg = 1
@@ -946,13 +977,16 @@ while run:
             player_obj.isJump = False
             player_obj.jumpCount = 9.5
 
+    # Checks if the player is on a platform and makes him fall if he's not
     if not (on_platform1 or on_platform2 or on_platform3 or on_platform4 or on_platform5 or on_platform6 or on_platform7 or on_platform8 or on_platform9 or on_platform10 or on_platform11 or on_platform12):
         player_obj.y += player_obj.vel  # Adjust the value to control the fall speed
 
+    #The hitbox for the player and the blue exit square
     if player_obj.hitbox[1] < exit_obj.hitbox[1] + exit_obj.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > exit_obj.hitbox[1]:
         if player_obj.hitbox[0] + player_obj.hitbox[2] > exit_obj.hitbox[0] and player_obj.hitbox[0] < exit_obj.hitbox[0] + exit_obj.hitbox[2]:
             exit_obj.hit()
 
+    # Checks the level we are on and loads the walls in the correct place so the player can't walk off screen
     if z>=0 and z<len(wall_objects):
         current_level_walls = wall_objects[z]
         for wall_obj in current_level_walls:
@@ -960,6 +994,7 @@ while run:
                 wall_obj.update_hitbox()
                 wall_obj.hit(player_obj)
 
+    # Sets all the parameters of the level on screen 2
     if (z==2) and not Level_Check_0:
         player_obj = Player(200, 398, 64, 64)
         platform1 = [Platform(75,463,1108,46)] # Floor platform
@@ -982,6 +1017,7 @@ while run:
         key_obj1.visible=True
         Level_Check_0=True
         enter_pressed = False
+    # Sets up all the hitboxes needed on screen 2
     elif z==2:
         if player_obj.hitbox[1] < key_obj1.hitbox[1] + key_obj1.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > key_obj1.hitbox[1]:
             if player_obj.hitbox[0] + player_obj.hitbox[2] > key_obj1.hitbox[0] and player_obj.hitbox[0] < key_obj1.hitbox[0] + key_obj1.hitbox[2]:
@@ -991,10 +1027,12 @@ while run:
             if player_obj.hitbox[1] < Enemy1.hitbox[1] + Enemy1.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > Enemy1.hitbox[1]:
                 if player_obj.hitbox[0] + player_obj.hitbox[2] > Enemy1.hitbox[0] and player_obj.hitbox[0] < Enemy1.hitbox[0] + Enemy1.hitbox[2]:
                     Enemy1.hit()
+    # removes any objects that are not needed
     elif z==3 and not enemy_check_1:
         if Enemy1.visible:
             enemies.remove(Enemy1)
         enemy_check_1 = True
+    # Sets all the parameters of the level on screen 4
     if (z == 4) and not Level_Check_1:
         platform1[0] = Platform(38,445,1144,66)
         platform2[0] = Platform(228,376,95,21)
@@ -1011,12 +1049,15 @@ while run:
         exit_obj = exit(513,174,173,14)
         target_obj = [Target(429,30,60,71),Target(1130,25,53,62), Target(0,0,0,0), Target(0,0,0,0)]
         Level_Check_1 = True
+    # Sets all the parameters of the level on screen 5
     elif (z==5)and not Level_Check_2:
         target_obj = [Target(0,0,0,0),Target(1130,25,53,62), Target(0,0,0,0),Target(0,0,0,0)]  
         Level_Check_2 = True
+    # Sets all the parameters of the level on screen 6
     elif (z==6)and not Level_Check_3:
         target_obj = [Target(0,0,0,0), Target(0,0,0,0), Target(0,0,0,0),Target(0,0,0,0)]
         Level_Check_3 = True
+    # Sets all the parameters of the level on screen 7
     elif (z==7) and not Level_Check_4:
         platform1[0] = Platform(38,463,1144,46)
         platform2[0] = Platform(172,386,65,20)
@@ -1046,6 +1087,7 @@ while run:
         key_obj4.visible=True
         key_obj4.collected=False   
         Level_Check_4 = True 
+    # Sets up any collisions and hitbox needed on screen 7 
     elif z==7:
 
         if player_obj.hitbox[1] < key_obj2.hitbox[1] + key_obj2.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > key_obj2.hitbox[1]:
@@ -1070,12 +1112,14 @@ while run:
             if player_obj.hitbox[1] < Enemy3.hitbox[1] + Enemy3.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > Enemy3.hitbox[1]:
                 if player_obj.hitbox[0] + player_obj.hitbox[2] > Enemy3.hitbox[0] and player_obj.hitbox[0] < Enemy3.hitbox[0] + Enemy3.hitbox[2]:
                     Enemy3.hit() 
+    # Removes any unecessary objects from screen 8
     elif z==8 and not enemy_check_2:
         if Enemy2.visible:
             enemies.remove(Enemy2)
         if Enemy3.visible:
             enemies.remove(Enemy3)
         enemy_check_2 = True
+    # Sets up any parameters for screen 9
     elif (z==9) and not Level_Check_5:
         platform1[0] = Platform(38,470,1143,42)
         platform2[0] = Platform(338,360,845,21)
@@ -1100,6 +1144,7 @@ while run:
         enemies.append(Enemy7)
         Level_Check_5 = True 
         target_obj = [Target(0,0,0,0), Target(0,0,0,0), Target(1096,45,88,80)]
+    # Sets up any hitboxes on screen 9
     elif z==9:
         Enemy4.draw(win)
         Enemy5.draw(win)
@@ -1121,8 +1166,10 @@ while run:
             if player_obj.hitbox[1] < Enemy7.hitbox[1] + Enemy7.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > Enemy7.hitbox[1]:
                 if player_obj.hitbox[0] + player_obj.hitbox[2] > Enemy7.hitbox[0] and player_obj.hitbox[0] < Enemy7.hitbox[0] + Enemy7.hitbox[2]:
                     Enemy7.hit()
+    # Sets up the target on screen 10
     elif z==10:
         target_obj = [Target(0,0,0,0), Target(0,0,0,0), Target(0,0,0,0)]
+    # Sets up any parameters needed for screen 11
     elif (z==11) and not Level_Check_6:
         platform1[0] = Platform(37,465,1146,40)
         platform2[0] = Platform(345,127,64,23)
@@ -1158,6 +1205,7 @@ while run:
         if Enemy7.visible:
             enemies.remove(Enemy7)
         Level_Check_6 = True 
+    # Sets up the hitboxes on screen 11 
     elif z==11:
         Enemy8.draw(win)
         Enemy9.draw(win)
@@ -1189,6 +1237,7 @@ while run:
             if player_obj.hitbox[1] < Enemy13.hitbox[1] + Enemy13.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > Enemy13.hitbox[1]:
                 if player_obj.hitbox[0] + player_obj.hitbox[2] > Enemy13.hitbox[0] and player_obj.hitbox[0] < Enemy13.hitbox[0] + Enemy13.hitbox[2]:
                     Enemy13.hit()
+    # Sets the parameters for screen 12
     elif (z==12) and not Level_Check_7:
         platform1[0] = Platform(548,353,104,23)
         platform2[0] = Platform(290,336,90,23)
@@ -1217,8 +1266,10 @@ while run:
             enemies.remove(Enemy13)
         Level_Check_7 = True 
         target_obj = [Target(0,0,0,0), Target(0,0,0,0), Target(0,0,0,0),Target(1059,372,105,125)]
+    # Sets up the parameters for the target on screen 13
     elif (z==13):
         target_obj = [Target(0,0,0,0), Target(0,0,0,0), Target(0,0,0,0),Target(0,0,0,0)]
+    # Sets up the paremeters on screen 14
     elif (z==14) and not Level_Check_8:
         platform1[0] = Platform(36,457,1149,52)
         platform2[0] = Platform(330,394,77,17)
@@ -1255,7 +1306,8 @@ while run:
         key_obj9 = key(786,127,64,64)
         key_obj9.visible=True
         key_obj9.collected=False   
-        Level_Check_8 = True 
+        Level_Check_8 = True
+    # Sets up the hitboxes on screen 14 
     elif z==14:
         Enemy14.draw(win)
         Enemy15.draw(win)
@@ -1297,6 +1349,7 @@ while run:
             if player_obj.hitbox[1] < Enemy16.hitbox[1] + Enemy16.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > Enemy16.hitbox[1]:
                 if player_obj.hitbox[0] + player_obj.hitbox[2] > Enemy16.hitbox[0] and player_obj.hitbox[0] < Enemy16.hitbox[0] + Enemy16.hitbox[2]:
                     Enemy16.hit()
+    # Removes the unecessary enemies on screen 15
     elif z==15 and not enemy_check_3:
         if Enemy14.visible:
             enemies.remove(Enemy14)
@@ -1305,6 +1358,7 @@ while run:
         if Enemy16.visible:
             enemies.remove(Enemy16)
         enemy_check_3 = True
+    # Sets up the paremeters on screen 16
     elif z==16 and not Level_Check_9:
         platform1[0] = Platform(40,448,1144,63)
         platform2[0] = Platform(830,397,62,22)
@@ -1327,6 +1381,7 @@ while run:
         Enemy19.visible=True
         Level_Check_9=True
         target_obj = [Target(0,0,0,0), Target(0,0,0,0), Target(0,0,0,0),Target(0,0,0,0),Target(438,267,58,79)]
+    # Sets the parameters for screen 17
     elif z==17 and not Level_Check_10:
         exit_obj = exit(527,47,98,67)
         key_obj9.collected = False
@@ -1350,6 +1405,7 @@ while run:
         if Enemy19.visible:
             enemies.remove(Enemy19)
         Level_Check_10=True
+    # Sets up the hitboxes for screen 16
     elif z==16:
         Enemy17.draw(win)
         Enemy18.draw(win)
@@ -1366,6 +1422,7 @@ while run:
             if player_obj.hitbox[1] < Enemy19.hitbox[1] + Enemy19.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > Enemy19.hitbox[1]:
                 if player_obj.hitbox[0] + player_obj.hitbox[2] > Enemy19.hitbox[0] and player_obj.hitbox[0] < Enemy19.hitbox[0] + Enemy19.hitbox[2]:
                     Enemy19.hit()
+    # Sets up the hitboxes fro screen 17
     elif z==17:
         Enemy20.draw(win)
         Enemy21.draw(win)
@@ -1393,6 +1450,7 @@ while run:
             if player_obj.hitbox[1] < Enemy22.hitbox[1] + Enemy22.hitbox[3] and player_obj.hitbox[1] + player_obj.hitbox[3] > Enemy22.hitbox[1]:
                 if player_obj.hitbox[0] + player_obj.hitbox[2] > Enemy22.hitbox[0] and player_obj.hitbox[0] < Enemy22.hitbox[0] + Enemy22.hitbox[2]:
                     Enemy22.hit()
+    # Removes the unecessary enemies needed
     elif z ==18 and not enemy_check_4:
         if Enemy20.visible:
             enemies.remove(Enemy20)
@@ -1402,32 +1460,36 @@ while run:
             enemies.remove(Enemy22)     
         enemy_check_4 = True 
     
+    # Sets up a 
     if input_active:
         play_time = elapsed_time
         win.blit(bg[z], (0, 0))
         input_surface = font.render("Enter Your Name: " + input_text, True, (255, 255, 255))
         input_rect = input_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
         win.blit(input_surface, input_rect)
+    # Loads the final exit object for screen 19
     elif z==19:
         exit_obj = exit(1200,0,0,0)
+    # Updates the display on screen 20
     elif z==20:
         pygame.display.update()
 
+    # Constantly blitting the screen so that it appears smooth to the player
     else:
         win.blit(bg[z], (0, 0))
-
+        # The code for the timer that runs throughout the whole game 
         if z >= 2 and z <= 18 and start_time is not None:
             elapsed_time = (pygame.time.get_ticks() - start_time) // 1000
             timer_text = timer_font.render(f" {elapsed_time} s", True, (255, 201, 14))
             win.blit(timer_text, (784, 628))
-
+        # Loads the score on the screen 
         if z >= 2 and z <= 18:
             score_text = score_font.render(f"{score}", True, (255, 201, 14))
             win.blit(score_text, (230, 634))
-
+        # Draws the player on the screen when the levels are active
         if z > 1 and z < 19:
             player_obj.draw(win)
-
+    # Draws any objects needed for the game to function, the z variable loading the screen
     if z==2:
         Enemy1.draw(win)
         key_obj1.draw(win)
@@ -1469,9 +1531,14 @@ while run:
         key_obj10.draw(win)
         key_obj11.draw(win) 
 
+    # Draws the bullets on the screen until the list is complete, then doesnt let the bullets draw if there is no more in the list
     for bullet in bullets:
         bullet.draw(win)
+    # Updates the display so the objects appear on top of the background
     pygame.display.update()
+# Closes the connection between the code and database
 conn.close()
+# Quits the pygame module
 pygame.quit()
+# Ends the code
 sys.exit()
