@@ -1,6 +1,6 @@
 # Code for my pygame Manic Miner remake/remodel
 
-# Loads any extenernal libraries needed fro the code to function
+# Loads any extenernal libraries needed for the code to function
 import pygame
 import sys
 import sqlite3
